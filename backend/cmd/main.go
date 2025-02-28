@@ -3,8 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
+	"github.com/Jason3n/bk/internal/handlers"
+	"github.com/Jason3n/bk/internal/repository"
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx"
 	"github.com/joho/godotenv"
 )
@@ -15,8 +19,9 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("no .env file found, please insert it")
 	}
-	// API_URL := os.Getenv("PROJECT_URL")
-	// API_KEY := os.Getenv("API_KEY")
+	// spin up server
+	/* API_URL := os.Getenv("PROJECT_URL")
+	API_KEY := os.Getenv("API_KEY") */
 	CONNECTION_STRING := os.Getenv("CONNECTION_STRING")
 
 	config, err := pgx.ParseConnectionString(CONNECTION_STRING)
@@ -24,32 +29,25 @@ func main() {
 		fmt.Printf("not able to connect to DB\n")
 		os.Exit(1)
 	}
+	// CONNECT TO PSQL DB ON SUPABASE
 	conn, err := pgx.Connect(config)
 	if err != nil {
 		log.Fatalf("Not able to connect to DB: %v", err)
 	}
 
+	// wait to close server until ctrl + c
 	defer conn.Close()
 
-	rows, err := conn.Query("SELECT * FROM user")
-	if err != nil {
-		log.Fatalf("Query failed: %v", err)
+	// intialize handler/repo
+	userRepo := repository.UserRepository(conn)
+	userHandler := handlers.UserHandler(userRepo)
+
+	// create new router
+	r := mux.NewRouter()
+	r.HandleFunc("/addUser", userHandler.CreateUser).Methods("POST")
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Printf("back it up")
+		return
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var user string
-
-		if err := rows.Scan(&user); err != nil {
-			log.Fatalf("Error scanning row: %v", err)
-		}
-
-		fmt.Printf(user + "\n")
-	}
-
-	// Check for errors encountered during iteration.
-	if err = rows.Err(); err != nil {
-		log.Fatalf("Error iterating rows: %v", err)
-	}
-
 }
