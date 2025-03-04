@@ -1,31 +1,35 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/Jason3n/bk/internal/models"
-	respository "github.com/Jason3n/bk/internal/repo"
-	"github.com/Jason3n/bk/internal/repository"
+	repository "github.com/Jason3n/bk/internal/repository"
 )
 
 type UserHandler struct {
-	Repo respository.UserRepository
+	repository repository.UserRepository
 }
 
-func newUserHandler(repo repository.UserRepository) *UserHandler {
-	return &UserHandler{Repo: repo}
+func NewUserHandler(repo repository.UserRepository) *UserHandler {
+	return &UserHandler{repository: repo}
 }
 
-func (h *UserHandler) CreateUser(w *http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.Repo.CreateUser(r.Context(), &user); err != nil {
+	err := h.repository.CreateUser(context.Background(), &user)
+	if err != nil {
+		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewDecoder(w).Encode(user)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
 }
