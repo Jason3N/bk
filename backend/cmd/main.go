@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -18,9 +19,9 @@ func main() {
 		log.Println("no .env file found, please ask for it from jason it")
 	}
 
-	dsn := "postgres://postgres.qgtrgrvxdodhdanparqs:Felichar1927~@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+	CONNECTION_STRING := os.Getenv("CONNECTION_STRING")
 
-	config, err := pgx.ParseConnectionString(dsn)
+	config, err := pgx.ParseConnectionString(CONNECTION_STRING)
 	if err != nil {
 		fmt.Printf("not able to connect to DB\n")
 		os.Exit(1)
@@ -46,8 +47,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("working"))
 	}).Methods("GET")
+	handler := cors.Default().Handler(r)
 
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		fmt.Printf("back it up")
 		return
 	}
