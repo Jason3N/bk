@@ -13,24 +13,23 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Start up the connection to the database
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, please insert it")
+		log.Println("no .env file found, please ask for it from jason it")
 	}
 
-	CONNECTION_STRING := os.Getenv("CONNECTION_STRING")
+	dsn := "postgres://postgres.qgtrgrvxdodhdanparqs:Felichar1927~@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
-	// Parse connection config
-	config, err := pgx.ParseConnectionString(CONNECTION_STRING)
+	config, err := pgx.ParseConnectionString(dsn)
 	if err != nil {
 		fmt.Printf("not able to connect to DB\n")
 		os.Exit(1)
 	}
-	// CONNECT TO PSQL DB ON SUPABASE
+
+	// connect to server
 	conn, err := pgx.Connect(config)
 	if err != nil {
-		log.Fatalf("Not able to connect to DB: %v", err)
+		log.Fatalf("not able to connect to DB: %v", err)
 	}
 
 	// wait to close server until ctrl + c
